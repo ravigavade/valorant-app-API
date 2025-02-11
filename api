@@ -1,0 +1,23 @@
+from flask import Flask, send_from_directory
+import os
+
+app = Flask(__name__)
+
+# Define the base directory where videos are stored
+BASE_VIDEO_DIR = os.path.dirname(os.path.abspath(__file__))
+
+@app.route('/videos/<path:subpath>', methods=['GET'])
+def get_video(subpath):
+    video_path = os.path.join(BASE_VIDEO_DIR, subpath)
+
+    # Extract directory and filename
+    folder, filename = os.path.split(video_path)
+
+    # Check if the folder exists for security reasons
+    if not os.path.exists(folder):
+        return {"error": "Folder not found"}, 404
+
+    return send_from_directory(folder, filename, mimetype='video/mp4')
+
+if __name__ == '__main__':
+    app.run(debug=True)
