@@ -1,0 +1,37 @@
+# api wid folder structure
+from flask import Flask, jsonify, send_from_directory, request
+import os
+
+app = Flask(__name__)
+
+# Set the base directory where all video folders exist
+BASE_VIDEO_DIR = os.path.dirname(os.path.abspath(__file__))
+
+@app.route('/videos/<folder>', methods=['GET'])
+def list_videos(folder):
+    """Returns a list of all .mp4 files in the specified folder."""
+    folder_path = os.path.join(BASE_VIDEO_DIR, folder)
+
+    if not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+        return jsonify({"error": "Folder not found"}), 404
+
+    # Get all .mp4 files in the folder
+    video_files = [f for f in os.listdir(folder_path) if f.endswith('.mp4')]
+
+    if not video_files:
+        return jsonify({"error": "No video files found"}), 404
+
+    # Generate URLs for each video
+    video_urls = [
+        request.url_root + f"videos/stream/{folder}/{filename}" for filename in video_files
+    ]
+
+    return jsonify({"videos": video_urls})
+
+@app.route('/videos/stream/<folder>/<filename>', methods=['GET'])
+def stream_video(folder, filename):
+    """Streams the video file from the server."""
+    return send_from_directory(os.path.join(BASE_VIDEO_DIR, folder), filename, mimetype='video/mp4')
+
+if __name__ == '__main__':
+    app.run(debug=True)
